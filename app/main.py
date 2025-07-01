@@ -16,7 +16,7 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"], 
 )
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://data/wale.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://data/schoolcollab.db")
 
 MEDIA_DIR = Path("media")
 IMAGES_DIR = MEDIA_DIR / "images"
