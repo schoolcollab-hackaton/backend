@@ -10,6 +10,7 @@ class Utilisateur(Model):
     nom = fields.CharField(max_length=100)
     prenom = fields.CharField(max_length=100)
     email = fields.CharField(max_length=200, unique=True)
+    password = fields.TextField()
     role = fields.CharField(max_length=50)
     score = fields.IntField(default=0)
     avatar = fields.TextField(null=True)
