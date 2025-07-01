@@ -8,12 +8,16 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "fastapi[standard] (>=0.115.14,<0.116.0)"
+    "fastapi (>=0.115.12,<0.116.0)",
+    "uvicorn[standard] (>=0.34.3,<0.35.0)",
+    "python-jose[cryptography] (>=3.5.0,<4.0.0)",
+    "passlib[bcrypt] (>=1.7.4,<2.0.0)",
+    "tortoise-orm[asyncpg] (>=0.25.1,<0.26.0)",
+    "aerich (>=0.9.0,<0.10.0)",
+    "pydantic (>=2.11.5,<3.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "pyjwt (>=2.10.1,<3.0.0)"
 ]
-
-[tool.poetry]
-packages = [{include = "backend_schoolcollab", from = "src"}]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
