@@ -3,11 +3,12 @@ from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
 from app.utils import get_allowed_origins
 from app.models.models import *
+from app.routers import auth
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
 
-app = FastAPI()
+app = FastAPI(title="SchoolCollab API", description="Social collaboration platform for Estiam students")
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,3 +38,5 @@ register_tortoise(
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+app.include_router(auth.router)
