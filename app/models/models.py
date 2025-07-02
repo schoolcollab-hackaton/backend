@@ -27,6 +27,11 @@ class RoleEnum(str, Enum):
     TEACHER = "teacher"
 
 
+class RequestTypeEnum(str, Enum):
+    SKILL_SWAP = "skill-swap"
+    MENTORING = "mentoring"
+
+
 class Utilisateur(Model):
     id = fields.IntField(pk=True)
     nom = fields.CharField(max_length=100)
@@ -276,6 +281,19 @@ class Contact(Model):
 
     class Meta:
         table = "contact"
+
+
+class UtilisateurRequest(Model):
+    id = fields.IntField(pk=True)
+    type = fields.CharEnumField(RequestTypeEnum)
+    message = fields.TextField(null=True)
+    sender = fields.ForeignKeyField("models.Utilisateur", related_name="sent_requests")
+    receiver = fields.ForeignKeyField("models.Utilisateur", related_name="received_requests")
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "utilisateurRequest"
 
 
 # Pydantic schemas for API responses
