@@ -35,7 +35,7 @@ def agent():
     rules = load_rules()
 
     if is_inappropriate(message, forbidden):
-        response = "🚫 Message inapproprié détecté. Merci de reformuler."
+        response = " Message inapproprié détecté. Merci de reformuler."
         log_exchange(message, response)
         return jsonify({"response": response})
 
