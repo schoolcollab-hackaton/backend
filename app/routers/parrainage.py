@@ -211,6 +211,49 @@ async def accepter_parrainage(
     return {"message": "Parrainage accepté avec succès"}
 
 
+@router.put("/{parrainage_id}/refuser", status_code=status.HTTP_200_OK)
+async def refuser_parrainage(
+        parrainage_id: int,
+        utilisateur_id: int = Query(...)
+):
+    """Refuser une demande de parrainage"""
+    current_user = await get_user_by_id(utilisateur_id)
+
+    # Vérifier si le parrainage existe
+    parrainage = await Parrainage.get_or_none(id=parrainage_id)
+    if not parrainage:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parrainage avec l'ID {parrainage_id} non trouvé"
+        )
+
+    # Vérifier que l'utilisateur actuel est bien le filleul de ce parrainage
+    relation = await UtilisateurParrainage.get_or_none(
+        parrainage_id=parrainage_id,
+        utilisateur_id=current_user.id,
+        role="filleul"
+    )
+
+    if not relation:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vous n'êtes pas autorisé à refuser ce parrainage"
+        )
+
+    # Vérifier que le parrainage est bien en attente
+    if parrainage.statut != "Pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ce parrainage est déjà {parrainage.statut}"
+        )
+
+    # Mettre à jour le statut
+    parrainage.statut = "Refused"
+    await parrainage.save()
+
+    return {"message": "Parrainage refusé avec succès"}
+
+
 @router.put("/{parrainage_id}/completer", status_code=status.HTTP_200_OK)
 async def completer_parrainage(
         parrainage_id: int,
