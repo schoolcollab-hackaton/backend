@@ -286,6 +286,7 @@ class UtilisateurSchema(BaseModel):
     avatar: Optional[str] = None
     filiere: Optional[FiliereEnum] = None
     niveau: Optional[NiveauEnum] = None
+    profile_completed: bool = False
     roles: Optional[List[RoleEnum]] = None
 
     class Config:
