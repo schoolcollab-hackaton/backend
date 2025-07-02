@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
 from app.utils import get_allowed_origins
 from app.models.models import *
-from app.routers import auth, contact, groupe, publication, dashboard, profile
+from app.routers import auth, contact, groupe, publication, dashboard, profile, recommendation
 from app.ai.chatbot.router import router as chatbot_router
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,3 +63,4 @@ app.include_router(chatbot_router)
 app.include_router(groupe.router)
 app.include_router(dashboard.router)
 app.include_router(publication.router)
+app.include_router(recommendation.router)

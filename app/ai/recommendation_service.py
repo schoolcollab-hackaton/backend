@@ -242,3 +242,194 @@ class RecommendationService:
         # Sort by score and return top matches
         group_scores.sort(key=lambda x: x['match_score'], reverse=True)
         return group_scores[:limit]
+    
+    async def skill_swap(self, user_id: int, limit: int = 10) -> List[Dict]:
+        """
+        Recommends users who have skills that the current user lacks or needs improvement in.
+        
+        Args:
+            user_id: ID of the current user
+            limit: Maximum number of recommendations to return
+            
+        Returns:
+            List of recommended users with skill swap scores and explanations
+        """
+        user_profile = await self.get_user_profile_data(user_id)
+        
+        # Get all other users excluding the current user
+        all_users = await Utilisateur.all().exclude(id=user_id)
+        
+        if not all_users:
+            return []
+        
+        # Get profiles for all candidates
+        candidate_profiles = []
+        for user in all_users:
+            profile = await self.get_user_profile_data(user.id)
+            candidate_profiles.append(profile)
+        
+        try:
+            # Get user's current skills and levels
+            user_competences = user_profile.get('competences', [])
+            user_skills = {}
+            
+            # Map user's skills to their levels (convert to numeric for comparison)
+            for comp in user_competences:
+                skill_name = comp.get('nom', '').lower()
+                skill_level = self._normalize_skill_level(comp.get('niveau', ''))
+                user_skills[skill_name] = skill_level
+            
+            recommendations = []
+            
+            for candidate in candidate_profiles:
+                candidate_competences = candidate.get('competences', [])
+                if not candidate_competences:
+                    continue
+                
+                # Calculate skill swap score for this candidate
+                swap_score, swap_details = self._calculate_swap_score(
+                    user_skills, candidate_competences, user_profile, candidate
+                )
+                
+                if swap_score > 0:
+                    recommendations.append({
+                        **candidate,
+                        'swap_score': swap_score,
+                        'swap_details': swap_details,
+                        'recommendation_type': 'skill_swap'
+                    })
+            
+            # Sort by swap score and return top recommendations
+            recommendations.sort(key=lambda x: x['swap_score'], reverse=True)
+            return recommendations[:limit]
+            
+        except Exception as e:
+            print(f"Error in skill swap recommendation: {e}")
+            return []
+    
+    def _calculate_swap_score(self, user_skills: Dict[str, int], 
+                            candidate_competences: List[Dict],
+                            user_profile: Dict, candidate_profile: Dict) -> tuple:
+        """
+        Calculate how valuable a skill swap would be between two users
+        
+        Returns:
+            Tuple of (swap_score, swap_details)
+        """
+        score = 0.0
+        swap_details = {
+            'skills_they_offer': [],
+            'skills_you_offer': [],
+            'mutual_benefits': [],
+            'skill_gaps_filled': 0,
+            'complementary_skills': 0
+        }
+        
+        # Get candidate's skills
+        candidate_skills = {}
+        for comp in candidate_competences:
+            skill_name = comp.get('nom', '').lower()
+            skill_level = self._normalize_skill_level(comp.get('niveau', ''))
+            candidate_skills[skill_name] = skill_level
+        
+        # Check what skills the candidate has that user lacks or needs improvement in
+        for skill, candidate_level in candidate_skills.items():
+            user_level = user_skills.get(skill, 0)
+            
+            # If user doesn't have this skill or has lower level
+            if user_level == 0:
+                # User completely lacks this skill
+                score += 2.0 * (candidate_level / 5.0)  # Higher weight for missing skills
+                swap_details['skills_they_offer'].append({
+                    'skill': skill,
+                    'their_level': candidate_level,
+                    'your_level': 0,
+                    'benefit': 'New skill to learn'
+                })
+                swap_details['skill_gaps_filled'] += 1
+                
+            elif candidate_level > user_level:
+                # User has skill but at lower level
+                improvement_potential = candidate_level - user_level
+                score += 1.0 * (improvement_potential / 5.0)
+                swap_details['skills_they_offer'].append({
+                    'skill': skill,
+                    'their_level': candidate_level,
+                    'your_level': user_level,
+                    'benefit': f'Improve from level {user_level} to {candidate_level}'
+                })
+        
+        # Check what skills user has that candidate lacks (mutual benefit)
+        for skill, user_level in user_skills.items():
+            candidate_level = candidate_skills.get(skill, 0)
+            
+            if candidate_level == 0 and user_level > 2:  # Only if user is competent
+                score += 0.5 * (user_level / 5.0)  # Bonus for mutual benefit
+                swap_details['skills_you_offer'].append({
+                    'skill': skill,
+                    'your_level': user_level,
+                    'their_level': 0,
+                    'benefit': 'You can teach this skill'
+                })
+                
+            elif user_level > candidate_level and user_level > 2:
+                improvement_potential = user_level - candidate_level
+                score += 0.3 * (improvement_potential / 5.0)
+                swap_details['skills_you_offer'].append({
+                    'skill': skill,
+                    'your_level': user_level,
+                    'their_level': candidate_level,
+                    'benefit': f'You can help improve from level {candidate_level} to {user_level}'
+                })
+        
+        # Bonus for complementary skills (different domains)
+        user_filiere = user_profile.get('filiere')
+        candidate_filiere = candidate_profile.get('filiere')
+        
+        if user_filiere and candidate_filiere and user_filiere != candidate_filiere:
+            score += 0.5  # Cross-domain collaboration bonus
+            swap_details['complementary_skills'] = 1
+            swap_details['mutual_benefits'].append(
+                f"Cross-domain collaboration between {user_filiere} and {candidate_filiere}"
+            )
+        
+        # Bonus for similar academic level (easier collaboration)
+        user_niveau = user_profile.get('niveau')
+        candidate_niveau = candidate_profile.get('niveau')
+        
+        if user_niveau and candidate_niveau:
+            level_diff = abs(user_niveau - candidate_niveau)
+            if level_diff <= 1:  # Same or adjacent levels
+                score += 0.3
+                swap_details['mutual_benefits'].append("Similar academic level for effective collaboration")
+        
+        return score, swap_details
+    
+    def _normalize_skill_level(self, level: str) -> int:
+        """
+        Convert skill level string to numeric value (1-5 scale)
+        """
+        if not level:
+            return 0
+        
+        level_str = str(level).lower()
+        
+        # Map common skill level terms to numbers
+        level_mapping = {
+            'débutant': 1, 'beginner': 1, 'novice': 1, '1': 1,
+            'intermédiaire': 2, 'intermediate': 2, '2': 2,
+            'avancé': 3, 'advanced': 3, '3': 3,
+            'expert': 4, '4': 4,
+            'maître': 5, 'master': 5, '5': 5
+        }
+        
+        for key, value in level_mapping.items():
+            if key in level_str:
+                return value
+        
+        # Try to extract number directly
+        try:
+            num = int(''.join(filter(str.isdigit, level_str)))
+            return min(max(num, 1), 5)  # Clamp between 1 and 5
+        except (ValueError, TypeError):
+            return 1  # Default to beginner if can't parse
