@@ -49,7 +49,13 @@ app.include_router(groupe.router)
 
 app.include_router(parrainage.router)
 
-@app.get("/scoring/actions", tags=["scoring"])
-def get_scoring_actions():
-    """Obtenir la liste des actions qui donnent des points et leur valeur"""
-    return {action.value: points for action, points in POINTS_PAR_ACTION.items()}
+@app.get("/utilisateurs/{utilisateur_id}/score", tags=["utilisateurs"])
+async def get_user_score(utilisateur_id: int):
+    """Obtenir le score d'un utilisateur spécifique"""
+    utilisateur = await Utilisateur.get_or_none(id=utilisateur_id)
+    if not utilisateur:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Utilisateur avec l'ID {utilisateur_id} non trouvé"
+        )
+    return {"utilisateur_id": utilisateur.id, "score": utilisateur.score}
