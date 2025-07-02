@@ -7,7 +7,7 @@ import os
 
 class StudentMatcher:
     def __init__(self):
-        self.model_path = os.path.join(os.path.dirname(__file__), 'models')
+        self.model_path = os.path.join(os.path.dirname(__file__), 'ai_models')
         self.sentence_model = None
         self.toxicity_classifier = None
         self._load_models()

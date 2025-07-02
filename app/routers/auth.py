@@ -110,7 +110,6 @@ async def login(user_credentials: UserLogin):
         nom=user.nom,
         prenom=user.prenom,
         email=user.email,
-        role=user.role,
         score=user.score,
         avatar=user.avatar
     )
