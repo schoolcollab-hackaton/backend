@@ -12,12 +12,14 @@ from datetime import datetime
 
 
 class PublicationCreate(BaseModel):
+    titre: str
     contenu: str
     imageURL: str = None
     type: str
 
 
 class PublicationUpdate(BaseModel):
+    titre: str = None
     contenu: str = None
     imageURL: str = None
     type: str = None
@@ -43,6 +45,7 @@ async def create_publication(
     data: PublicationCreate, current_user: Utilisateur = Depends(get_current_user)
 ):
     pub = await Publication.create(
+        titre=data.titre,
         contenu=data.contenu,
         imageURL=data.imageURL,
         type=data.type,
@@ -50,6 +53,7 @@ async def create_publication(
     )
     return PublicationSchema(
         id=pub.id,
+        titre=pub.titre,
         contenu=pub.contenu,
         imageURL=pub.imageURL,
         date=pub.date,
@@ -64,6 +68,7 @@ async def list_publications():
     return [
         PublicationSchema(
             id=p.id,
+            titre=p.titre,
             contenu=p.contenu,
             imageURL=p.imageURL,
             date=p.date,
@@ -81,6 +86,7 @@ async def get_publication(pub_id: int):
         raise HTTPException(status_code=404, detail="Publication not found")
     return PublicationSchema(
         id=pub.id,
+        titre=pub.titre,
         contenu=pub.contenu,
         imageURL=pub.imageURL,
         date=pub.date,
@@ -106,6 +112,7 @@ async def update_publication(
     await pub.save()
     return PublicationSchema(
         id=pub.id,
+        titre=pub.titre,
         contenu=pub.contenu,
         imageURL=pub.imageURL,
         date=pub.date,
