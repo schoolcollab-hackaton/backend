@@ -1,9 +1,10 @@
 from fastapi import FastAPI, HTTPException, Query, File, UploadFile, Form, Response, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
+from app.scoring.score_system import POINTS_PAR_ACTION
 from app.utils import get_allowed_origins
 from app.models.models import *
-from app.routers import auth
+from app.routers import auth, parrainage
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
@@ -40,3 +41,10 @@ async def root():
     return {"message": "Hello World"}
 
 app.include_router(auth.router)
+app.include_router(parrainage.router)
+
+'''Route pour obtenir les actions de scoring et leurs points associés'''
+@app.get("/scoring/actions", tags=["scoring"])
+def get_scoring_actions():
+    """Obtenir la liste des actions qui donnent des points et leur valeur"""
+    return {action.value: points for action, points in POINTS_PAR_ACTION.items()}
