@@ -219,7 +219,7 @@ async def mes_parrainages(current_user: Utilisateur = Depends(get_current_user))
                 dateDemande=parrainage.dateDemande,
                 parrain_id=parrain_id,
                 filleul_id=filleul_id,
-                message=None  # Nous n'avons pas de champ message dans le modèle
+                message=None
             ))
 
     return result
