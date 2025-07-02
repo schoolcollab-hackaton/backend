@@ -220,12 +220,12 @@ class AIService:
         Returns:
             Moderation result with toxicity score and recommendations
         """
-        is_toxic = await self.recommendation_service.check_content_safety(text)
+        is_safe = await self.recommendation_service.check_content_safety(text)
         
         return {
-            'is_safe': not is_toxic,
-            'is_toxic': is_toxic,
-            'confidence': 'high' if is_toxic else 'medium',
-            'action': 'block' if is_toxic else 'approve',
-            'message': 'Content appears to contain toxic language and should be reviewed' if is_toxic else 'Content appears safe'
+            'is_safe': is_safe,
+            'is_toxic': not is_safe,
+            'confidence': 'high' if not is_safe else 'medium',
+            'action': 'block' if not is_safe else 'approve',
+            'message': 'Content appears to contain toxic language and should be reviewed' if not is_safe else 'Content appears safe'
         }

@@ -90,7 +90,9 @@ class StudentMatcher:
             result = self.toxicity_classifier(text)
             # Return True if toxic label has high confidence
             for item in result:
-                if item['label'] == 'TOXIC' and item['score'] > 0.7:
+                print(f"Label: {item['label']}, Score: {item['score']}")
+                if item['label'].lower() == 'toxic' and float(item['score']) > 0.7:
+                    print("Toxic content detected")
                     return True
             return False
         except Exception as e:

@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
 from app.utils import get_allowed_origins
 from app.models.models import *
-from app.routers import auth
+from app.routers import auth, contact
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
@@ -40,3 +40,4 @@ async def root():
     return {"message": "Hello World"}
 
 app.include_router(auth.router)
+app.include_router(contact.router)
