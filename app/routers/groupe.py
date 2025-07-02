@@ -129,3 +129,24 @@ async def groupes_par_centre(centre_id: int):
         {"id": g.id, "nom": g.nom, "description": g.description}
         for g in centre.groupes
     ]
+
+@router.get("/mes-groupes")
+async def mes_groupes(current_user: Utilisateur = Depends(get_current_user)):
+    liens = await UtilisateurGroupe.filter(
+        utilisateur=current_user, 
+        statut="actif"
+    ).prefetch_related("groupe", "groupe__centreInteret")
+    
+    return [
+        {
+            "id": lien.groupe.id,
+            "nom": lien.groupe.nom,
+            "description": lien.groupe.description,
+            "role": lien.role,
+            "centre_interet": {
+                "id": lien.groupe.centreInteret.id,
+                "nom": lien.groupe.centreInteret.nom
+            }
+        }
+        for lien in liens
+    ]
