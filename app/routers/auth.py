@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -9,6 +9,8 @@ from app.utils import (
     create_access_token,
     verify_token
 )
+
+ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer()
@@ -84,7 +86,7 @@ async def register(user_data: UserRegister):
     )
 
 @router.post("/login", response_model=Token)
-async def login(user_credentials: UserLogin):
+async def login(user_credentials: UserLogin, response: Response):
     """Login user"""
     # Get user by email
     user = await Utilisateur.get_or_none(email=user_credentials.email)
@@ -100,9 +102,19 @@ async def login(user_credentials: UserLogin):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
-    
+        
     # Create access token
     access_token = create_access_token(data={"sub": str(user.id)})
+    
+    # Set httpOnly cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=ACCESS_TOKEN_EXPIRE_HOURS * 60 * 60,  # 24 hours in seconds
+        httponly=True,
+        secure=False,  # HTTPS only in production
+        samesite="lax"
+    )
     
     # Convert to schema
     user_schema = UtilisateurSchema(
