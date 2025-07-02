@@ -2,22 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List
 from ..models.models import Message, MessageSchema, Utilisateur
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from ..utils import verify_token
+from app.utils import get_current_user
 
 router = APIRouter(prefix="/messages", tags=["messages"])
-security = HTTPBearer()
 
-# Authentication dependency
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    user_id = verify_token(token)
-    user = await Utilisateur.get_or_none(id=int(user_id))
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
+
 
 @router.post("/", response_model=MessageSchema)
 async def create_message(

@@ -3,8 +3,10 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi import HTTPException, status
 import logging
+from fastapi import HTTPException, status, Depends, Request
+from app.models.models import Utilisateur
+import jwt
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -17,7 +19,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
+ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -27,57 +29,41 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    logger.debug(f"Creating access token with data: {data}")
-    to_encode = data.copy()
+def create_access_token(user_id: int) -> str:
+    """Create access token"""
+    expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    payload = {
+        "user_id": user_id,
+        "exp": expire,
+        "iat": datetime.utcnow()
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
 
-    to_encode.update({"exp": expire})
-    logger.debug(f"Token payload: {to_encode}")
-
+async def get_current_user(request: Request) -> Utilisateur:
+    """Get current user from access token cookie"""
+    access_token = request.cookies.get("access_token")
+    
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
     try:
-        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        logger.debug("Token created successfully")
-        return encoded_jwt
-    except Exception as e:
-        logger.error(f"Error creating token: {str(e)}")
-        raise
-
-
-def verify_token(token: str):
-    logger.debug("Verifying token")
-    try:
-        logger.debug(
-            f"Token being verified: {token[:10]}..."
-        )  # Only log first 10 chars for security
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        logger.debug(f"Token payload decoded: {payload}")
-        user_id = payload.get("sub")
-        if user_id is None:
-            logger.error("Token payload missing 'sub' claim")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing user ID"
-            )
-        return user_id
-    except JWTError as e:
-        logger.error(f"JWT verification failed: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error verifying token: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Token verification error: {str(e)}",
-        )
-
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+            
+        user = await Utilisateur.get_or_none(id=user_id)
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+            
+        return user
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 def get_allowed_origins():
     origins = [

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 import logging
@@ -8,7 +7,7 @@ from app.utils import (
     verify_password,
     get_password_hash,
     create_access_token,
-    verify_token,
+    get_current_user
 )
 
 # Configure logging
@@ -18,7 +17,6 @@ logger = logging.getLogger(__name__)
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
-security = HTTPBearer()
 
 
 # Pydantic models for requests
@@ -38,21 +36,6 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user: UtilisateurSchema
-
-
-# Authentication dependency
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    token = credentials.credentials
-    user_id = verify_token(token)
-    user = await Utilisateur.get_or_none(id=int(user_id))
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
 
 
 @router.post("/register", response_model=Token)
@@ -110,7 +93,7 @@ async def login(user_credentials: UserLogin, response: Response):
         )
 
     # Create access token
-    access_token = create_access_token(data={"sub": str(user.id)})
+    access_token = create_access_token(user.id)
 
     # Set httpOnly cookie
     response.set_cookie(
@@ -139,72 +122,30 @@ async def login(user_credentials: UserLogin, response: Response):
 
 
 @router.get("/me", response_model=UtilisateurSchema)
-async def get_current_user_info(request: Request):
-    """Get current user information from httpOnly cookie"""
-    try:
-        logger.debug("Accessing /auth/me endpoint")
-        logger.debug(f"Request cookies: {request.cookies}")
+async def get_current_user_info(current_user: Utilisateur = Depends(get_current_user)):
 
-        cookie_token = request.cookies.get("access_token")
-        if not cookie_token:
-            logger.error("No access_token cookie found")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Not authenticated",
-            )
+    user_roles = await UtilisateurRole.filter(
+        utilisateur=current_user, statut="active"
+    ).all()
+    roles = [role.role for role in user_roles]
+    logger.debug(f"User roles: {roles}")
 
-        logger.debug("Verifying token")
-        try:
-            user_id = verify_token(cookie_token)
-            logger.debug(f"Token verified, user_id: {user_id}")
-        except Exception as e:
-            logger.error(f"Token verification failed: {str(e)}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token: {str(e)}",
-            )
-
-        logger.debug(f"Fetching user with id: {user_id}")
-        user = await Utilisateur.get_or_none(id=int(user_id))
-        if user is None:
-            logger.error(f"No user found with id: {user_id}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found",
-            )
-
-        logger.debug("Fetching user roles")
-        user_roles = await UtilisateurRole.filter(
-            utilisateur=user, statut="active"
-        ).all()
-        roles = [role.role for role in user_roles]
-        logger.debug(f"User roles: {roles}")
-
-        user_schema = UtilisateurSchema(
-            id=user.id,
-            nom=user.nom,
-            prenom=user.prenom,
-            email=user.email,
-            score=user.score,
-            avatar=user.avatar,
-            # discord=user.discord,
-            # linkedin=user.linkedin,
-            profile_completed=user.profile_completed,
-            filiere=user.filiere,
-            niveau=user.niveau,
-            roles=roles,
-        )
-        logger.debug("Successfully retrieved user info")
-        return user_schema
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception("Unexpected error in /auth/me endpoint")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}",
-        )
+    user_schema = UtilisateurSchema(
+        id=current_user.id,
+        nom=current_user.nom,
+        prenom=current_user.prenom,
+        email=current_user.email,
+        score=current_user.score,
+        avatar=current_user.avatar,
+        # discord=user.discord, 
+        # linkedin=user.linkedin,
+        profile_completed=current_user.profile_completed,
+        filiere=current_user.filiere,
+        niveau=current_user.niveau,
+        roles=roles,
+    )
+    logger.debug("Successfully retrieved user info")
+    return user_schema
 
 
 @router.put("/me", response_model=UtilisateurSchema)
