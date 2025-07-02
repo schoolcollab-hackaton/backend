@@ -29,7 +29,7 @@ app.mount("/media", StaticFiles(directory="media"), name="media")
 # Database initialization
 register_tortoise(
     app,
-    db_url="sqlite://data/wale.db",
+    db_url=DATABASE_URL,
     modules={"models": ["app.models.models"]},
     generate_schemas=True,
     add_exception_handlers=True,

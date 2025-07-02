@@ -15,3 +15,5 @@ poetry install --no-root
 ```bash
 poetry run uvicorn app.main:app 
 ```
+
+- Boom voila. Vous pouvez maintenant accéder à l'API à l'adresse http://localhost:8000/docs pour voir la documentation interactive de l'API.
