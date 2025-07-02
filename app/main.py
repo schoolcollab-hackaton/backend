@@ -7,6 +7,7 @@ from app.routers import auth
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
+import logging
 
 app = FastAPI(title="SchoolCollab API", description="Social collaboration platform for Estiam students")
 
@@ -17,16 +18,17 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"], 
 )
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://data/schoolcollab.db")
+
+
 
 MEDIA_DIR = Path("media")
 IMAGES_DIR = MEDIA_DIR / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
-# Mount static files
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
-# Database initialization
 register_tortoise(
     app,
     db_url=DATABASE_URL,
@@ -38,5 +40,13 @@ register_tortoise(
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@app.get("/ping")
+async def ping():
+    logger.info("Ping endpoint hit.")
+    return {"message": "pong from FastAPI backend!"}
 
 app.include_router(auth.router)
