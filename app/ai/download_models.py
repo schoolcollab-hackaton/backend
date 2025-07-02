@@ -18,6 +18,12 @@ def download_models():
     sentence_model.save(os.path.join(models_dir, 'sentence-transformer'))
     print("✓ Sentence transformer downloaded")
     
+    print("Downloading multilingual sentence transformer for French...")
+    # Download multilingual model for chatbot (supports French)
+    multilingual_model = SentenceTransformer('all-mpnet-base-v2')
+    multilingual_model.save(os.path.join(models_dir, 'multilingual-chatbot'))
+    print("✓ Multilingual model downloaded")
+    
     print("Downloading toxicity detection model...")
     # Download toxicity detection model
     tokenizer = AutoTokenizer.from_pretrained("unitary/toxic-bert")
@@ -27,14 +33,7 @@ def download_models():
     model.save_pretrained(os.path.join(models_dir, 'toxic-bert'))
     print("✓ Toxicity detection model downloaded")
     
-    print("Downloading French sentiment analysis model...")
-    # Download French sentiment model for better French text understanding
-    fr_tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-xlm-roberta-base-sentiment")
-    fr_model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-xlm-roberta-base-sentiment")
-    
-    fr_tokenizer.save_pretrained(os.path.join(models_dir, 'french-sentiment'))
-    fr_model.save_pretrained(os.path.join(models_dir, 'french-sentiment'))
-    print("✓ French sentiment model downloaded")
+    print("Skipping French sentiment model (not required for chatbot)")
     
     print("All models downloaded successfully!")
     print(f"Models saved in: {models_dir}")
