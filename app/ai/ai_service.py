@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 from .recommendation_service import RecommendationService
 from ..models.models import RoleEnum
-
+import numpy as np
 class AIService:
     """
     Main AI service that provides intelligent recommendations for student connections
