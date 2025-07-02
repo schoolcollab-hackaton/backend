@@ -34,7 +34,20 @@ class StudentMatcher:
         
         # Combine user information into text
         profile_text = f"{user_data.get('nom', '')} {user_data.get('prenom', '')} "
-        profile_text += f"Role: {user_data.get('role', '')} "
+        
+        # Add roles if available
+        if 'roles' in user_data and user_data['roles']:
+            roles_text = " ".join([role.value if hasattr(role, 'value') else str(role) for role in user_data['roles']])
+            profile_text += f"Roles: {roles_text} "
+        
+        # Add filiere and niveau
+        if 'filiere' in user_data and user_data['filiere']:
+            filiere = user_data['filiere'].value if hasattr(user_data['filiere'], 'value') else str(user_data['filiere'])
+            profile_text += f"Program: {filiere} "
+        
+        if 'niveau' in user_data and user_data['niveau']:
+            niveau = user_data['niveau'].value if hasattr(user_data['niveau'], 'value') else str(user_data['niveau'])
+            profile_text += f"Year: {niveau} "
         
         # Add interests if available
         if 'interests' in user_data:
@@ -57,6 +70,8 @@ class StudentMatcher:
         # Calculate cosine similarities
         similarities = []
         for i, candidate_vector in enumerate(candidate_vectors):
+            if candidate_vector.size == 0:
+                continue
             similarity = np.dot(user_vector, candidate_vector) / (
                 np.linalg.norm(user_vector) * np.linalg.norm(candidate_vector)
             )
@@ -98,6 +113,37 @@ class StudentMatcher:
         
         return sorted(scores, key=lambda x: x[1], reverse=True)
     
+    def match_by_filiere_niveau(self, target_filiere: str, target_niveau: int,
+                               candidates: List[Dict]) -> List[Tuple[int, float]]:
+        """Match students by same filiere and similar niveau"""
+        scores = []
+        
+        for i, candidate in enumerate(candidates):
+            score = 0.0
+            
+            # Same filiere gets high score
+            candidate_filiere = candidate.get('filiere')
+            if candidate_filiere:
+                filiere_val = candidate_filiere.value if hasattr(candidate_filiere, 'value') else str(candidate_filiere)
+                if filiere_val == target_filiere:
+                    score += 0.6
+            
+            # Similar niveau gets additional score
+            candidate_niveau = candidate.get('niveau')
+            if candidate_niveau:
+                niveau_val = candidate_niveau.value if hasattr(candidate_niveau, 'value') else int(candidate_niveau)
+                niveau_diff = abs(niveau_val - target_niveau)
+                if niveau_diff == 0:
+                    score += 0.4
+                elif niveau_diff == 1:
+                    score += 0.2
+                elif niveau_diff == 2:
+                    score += 0.1
+            
+            scores.append((i, score))
+        
+        return sorted(scores, key=lambda x: x[1], reverse=True)
+    
     def recommend_mentors(self, student_competences: List[str], 
                          mentor_competences: List[List[str]]) -> List[Tuple[int, float]]:
         """Recommend mentors based on competency gaps"""
@@ -109,6 +155,35 @@ class StudentMatcher:
             # Score based on how many skills mentor has that student lacks
             missing_skills = mentor_comp_set - student_comp_set
             score = len(missing_skills) / len(mentor_comp_set) if mentor_comp_set else 0
+            scores.append((i, score))
+        
+        return sorted(scores, key=lambda x: x[1], reverse=True)
+    
+    def find_cross_filiere_collaborators(self, user_filiere: str, user_niveau: int,
+                                       candidates: List[Dict]) -> List[Tuple[int, float]]:
+        """Find collaborators from different filieres but similar niveau for interdisciplinary projects"""
+        scores = []
+        
+        for i, candidate in enumerate(candidates):
+            score = 0.0
+            
+            # Different filiere gets points (for diversity)
+            candidate_filiere = candidate.get('filiere')
+            if candidate_filiere:
+                filiere_val = candidate_filiere.value if hasattr(candidate_filiere, 'value') else str(candidate_filiere)
+                if filiere_val != user_filiere:
+                    score += 0.5
+            
+            # Similar niveau is important for peer collaboration
+            candidate_niveau = candidate.get('niveau')
+            if candidate_niveau:
+                niveau_val = candidate_niveau.value if hasattr(candidate_niveau, 'value') else int(candidate_niveau)
+                niveau_diff = abs(niveau_val - user_niveau)
+                if niveau_diff == 0:
+                    score += 0.5
+                elif niveau_diff == 1:
+                    score += 0.3
+            
             scores.append((i, score))
         
         return sorted(scores, key=lambda x: x[1], reverse=True)
