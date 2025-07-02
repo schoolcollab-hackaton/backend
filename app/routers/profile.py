@@ -9,7 +9,9 @@ from app.models.models import (
     Competence,
     CentreInteret,
     UtilisateurCompetence,
-    UtilisateurCentreInteret
+    UtilisateurCentreInteret,
+    UtilisateurRole,
+    RoleEnum
 )
 from app.utils import verify_token
 
@@ -21,6 +23,9 @@ class ProfileCompleteRequest(BaseModel):
     niveau: NiveauEnum
     competences: Dict[str, str]
     centres_interet: List[str]
+    is_mentor: Optional[bool] = False
+    discord: Optional[str] = None
+    linkedin: Optional[str] = None
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
@@ -44,6 +49,10 @@ async def complete_profile(
     current_user.filiere = profile_data.filiere
     current_user.niveau = profile_data.niveau
     current_user.profile_completed = True
+    if profile_data.discord:
+        current_user.discord = profile_data.discord
+    if profile_data.linkedin:
+        current_user.linkedin = profile_data.linkedin
     await current_user.save()
     
     # Remove existing competences
@@ -74,10 +83,25 @@ async def complete_profile(
             centreInteret=centre
         )
     
+    # Handle mentor role assignment
+    if profile_data.is_mentor:
+        # Check if user already has mentor role
+        existing_mentor_role = await UtilisateurRole.get_or_none(
+            utilisateur=current_user, 
+            role=RoleEnum.MENTOR
+        )
+        if not existing_mentor_role:
+            await UtilisateurRole.create(
+                utilisateur=current_user,
+                role=RoleEnum.MENTOR,
+                statut="active"
+            )
+    
     return {
         "message": "Profile completed successfully",
         "filiere": current_user.filiere,
         "niveau": current_user.niveau,
         "competences_count": len(profile_data.competences),
-        "centres_interet_count": len(profile_data.centres_interet)
+        "centres_interet_count": len(profile_data.centres_interet),
+        "is_mentor": profile_data.is_mentor
     }
