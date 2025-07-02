@@ -18,13 +18,17 @@ class NiveauEnum(int, Enum):
     QUATRIEME_ANNEE = 4
     CINQUIEME_ANNEE = 5
 
+class RoleEnum(str, Enum):
+    STUDENT = "student"
+    MENTOR = "mentor"
+    TEACHER = "teacher"
+
 class Utilisateur(Model):
     id = fields.IntField(pk=True)
     nom = fields.CharField(max_length=100)
     prenom = fields.CharField(max_length=100)
     email = fields.CharField(max_length=200, unique=True)
     password = fields.TextField()
-    role = fields.CharField(max_length=50)
     score = fields.IntField(default=0)
     avatar = fields.TextField(null=True)
     filiere = fields.CharEnumField(FiliereEnum, null=True)
@@ -34,6 +38,17 @@ class Utilisateur(Model):
 
     class Meta:
         table = "utilisateur"
+
+class UtilisateurRole(Model):
+    id = fields.IntField(pk=True)
+    utilisateur = fields.ForeignKeyField('models.Utilisateur', related_name='user_roles')
+    role = fields.CharEnumField(RoleEnum)
+    dateAttribution = fields.DatetimeField(auto_now_add=True)
+    statut = fields.CharField(max_length=50, default='active')  # active, inactive
+
+    class Meta:
+        table = "utilisateurRole"
+        unique_together = (("utilisateur", "role"),)
 
 class CentreInteret(Model):
     id = fields.IntField(pk=True)
@@ -189,11 +204,11 @@ class UtilisateurSchema(BaseModel):
     nom: str
     prenom: str
     email: str
-    role: str
     score: int
     avatar: Optional[str] = None
     filiere: Optional[FiliereEnum] = None
     niveau: Optional[NiveauEnum] = None
+    roles: Optional[List[RoleEnum]] = None
 
     class Config:
         from_attributes = True
