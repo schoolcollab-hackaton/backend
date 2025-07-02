@@ -289,6 +289,7 @@ class UtilisateurRequest(Model):
     message = fields.TextField(null=True)
     sender = fields.ForeignKeyField("models.Utilisateur", related_name="sent_requests")
     receiver = fields.ForeignKeyField("models.Utilisateur", related_name="received_requests")
+    status = fields.CharField(max_length=50, default="pending")  # pending, accepted, rejected
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
