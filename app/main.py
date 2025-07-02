@@ -16,6 +16,11 @@ from app.models.models import *
 from app.routers import auth, contact, groupe, publication, dashboard, profile, recommendation
 from app.ai.chatbot.router import router as chatbot_router
 
+from data.mock import (
+    populate_mock_data
+)
+
+
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
@@ -64,3 +69,22 @@ app.include_router(groupe.router)
 app.include_router(dashboard.router)
 app.include_router(publication.router)
 app.include_router(recommendation.router)
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database with mock data if empty"""
+    try:
+        # Check if database has any users
+        user_count = await Utilisateur.all().count()
+        print(f"Found {user_count} users in database")
+        
+        if user_count == 0:
+            print("Database is empty, populating with mock data...")
+            await populate_mock_data()
+        else:
+            print("Database already has users, skipping mock data population")
+            
+    except Exception as e:
+        print(f"Error during startup: {e}")
+
+
