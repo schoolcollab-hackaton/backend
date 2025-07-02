@@ -5,6 +5,19 @@ from typing import List, Optional
 from datetime import datetime
 from enum import Enum
 
+class FiliereEnum(str, Enum):
+    WMD = "WMD"
+    API = "API"
+    BDAI = "BDAI"
+    CCSN = "CCSN"
+
+class NiveauEnum(int, Enum):
+    PREMIERE_ANNEE = 1
+    DEUXIEME_ANNEE = 2
+    TROISIEME_ANNEE = 3
+    QUATRIEME_ANNEE = 4
+    CINQUIEME_ANNEE = 5
+
 class Utilisateur(Model):
     id = fields.IntField(pk=True)
     nom = fields.CharField(max_length=100)
@@ -14,6 +27,8 @@ class Utilisateur(Model):
     role = fields.CharField(max_length=50)
     score = fields.IntField(default=0)
     avatar = fields.TextField(null=True)
+    filiere = fields.CharEnumField(FiliereEnum, null=True)
+    niveau = fields.IntEnumField(NiveauEnum, null=True)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
@@ -177,6 +192,8 @@ class UtilisateurSchema(BaseModel):
     role: str
     score: int
     avatar: Optional[str] = None
+    filiere: Optional[FiliereEnum] = None
+    niveau: Optional[NiveauEnum] = None
 
     class Config:
         from_attributes = True
