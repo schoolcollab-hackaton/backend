@@ -1,22 +1,35 @@
-from fastapi import FastAPI, HTTPException, Query, File, UploadFile, Form, Response, Request, Depends
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Query,
+    File,
+    UploadFile,
+    Form,
+    Response,
+    Request,
+    Depends,
+)
 from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
 from app.utils import get_allowed_origins
 from app.models.models import *
-from app.routers import auth, contact, groupe
+from app.routers import auth, contact, groupe, publication
 from app.ai.chatbot.router import router as chatbot_router
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
 
-app = FastAPI(title="SchoolCollab API", description="Social collaboration platform for Estiam students")
+app = FastAPI(
+    title="SchoolCollab API",
+    description="Social collaboration platform for Estiam students",
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
     allow_credentials=True,
-    allow_methods=["*"],  
-    allow_headers=["*"], 
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://data/schoolcollab.db")
 
@@ -36,11 +49,14 @@ register_tortoise(
     add_exception_handlers=True,
 )
 
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
 
 app.include_router(auth.router)
 app.include_router(contact.router)
 app.include_router(chatbot_router)
 app.include_router(groupe.router)
+app.include_router(publication.router)
