@@ -1,0 +1,82 @@
+from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
+from typing import List, Optional, Dict
+from app.models.models import (
+    Utilisateur, 
+    FiliereEnum, 
+    NiveauEnum,
+    Competence,
+    CentreInteret,
+    UtilisateurCompetence,
+    UtilisateurCentreInteret
+)
+from app.utils import verify_token
+
+router = APIRouter(prefix="/profile", tags=["profile"])
+security = HTTPBearer()
+
+class ProfileCompleteRequest(BaseModel):
+    filiere: FiliereEnum
+    niveau: NiveauEnum
+    competences: Dict[str, str]
+    centres_interet: List[str]
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    user_id = verify_token(token)
+    user = await Utilisateur.get_or_none(id=int(user_id))
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+    return user
+
+@router.put("/complete")
+async def complete_profile(
+    profile_data: ProfileCompleteRequest,
+    current_user: Utilisateur = Depends(get_current_user)
+):
+    """Complete user profile with filiere, niveau, competences and centres d'interet"""
+    
+    # Update user's filiere and niveau
+    current_user.filiere = profile_data.filiere
+    current_user.niveau = profile_data.niveau
+    await current_user.save()
+    
+    # Remove existing competences
+    await UtilisateurCompetence.filter(utilisateur=current_user).delete()
+    
+    # Add new competences
+    for competence_nom, competence_niveau in profile_data.competences.items():
+        competence = await Competence.get_or_none(nom=competence_nom)
+        if not competence:
+            competence = await Competence.create(nom=competence_nom, description="")
+        await UtilisateurCompetence.create(
+            utilisateur=current_user,
+            competence=competence,
+            niveau=competence_niveau,
+            statut="active"
+        )
+    
+    # Remove existing centres d'interet
+    await UtilisateurCentreInteret.filter(utilisateur=current_user).delete()
+    
+    # Add new centres d'interet
+    for centre_titre in profile_data.centres_interet:
+        centre = await CentreInteret.get_or_none(titre=centre_titre)
+        if not centre:
+            centre = await CentreInteret.create(titre=centre_titre)
+        await UtilisateurCentreInteret.create(
+            utilisateur=current_user,
+            centreInteret=centre
+        )
+    
+    return {
+        "message": "Profile completed successfully",
+        "filiere": current_user.filiere,
+        "niveau": current_user.niveau,
+        "competences_count": len(profile_data.competences),
+        "centres_interet_count": len(profile_data.centres_interet)
+    }
