@@ -43,6 +43,7 @@ async def complete_profile(
     # Update user's filiere and niveau
     current_user.filiere = profile_data.filiere
     current_user.niveau = profile_data.niveau
+    current_user.profile_completed = True
     await current_user.save()
     
     # Remove existing competences
