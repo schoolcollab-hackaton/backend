@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.models.models import DemandeSoutien, Utilisateur, Competence
-from app.routers.auth import get_current_user
+from app.utils import get_current_user
 
 router = APIRouter(
     prefix="/demande-soutien",

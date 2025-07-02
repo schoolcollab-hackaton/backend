@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from app.models.models import (
@@ -13,10 +12,9 @@ from app.models.models import (
     UtilisateurRole,
     RoleEnum,
 )
-from app.utils import verify_token
+from app.utils import get_current_user
 
 router = APIRouter(prefix="/profile", tags=["profile"])
-security = HTTPBearer()
 
 
 class ProfileCompleteRequest(BaseModel):
@@ -27,20 +25,6 @@ class ProfileCompleteRequest(BaseModel):
     is_mentor: Optional[bool] = False
     discord: Optional[str] = None
     linkedin: Optional[str] = None
-
-
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    token = credentials.credentials
-    user_id = verify_token(token)
-    user = await Utilisateur.get_or_none(id=int(user_id))
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
 
 
 @router.get("/competences")

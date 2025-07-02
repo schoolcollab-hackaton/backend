@@ -1,13 +1,5 @@
 from fastapi import (
     FastAPI,
-    HTTPException,
-    Query,
-    File,
-    UploadFile,
-    Form,
-    Response,
-    Request,
-    Depends,
 )
 from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
@@ -31,7 +23,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Your frontend URL
+    allow_origins=get_allowed_origins(),  # Your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

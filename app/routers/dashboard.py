@@ -11,7 +11,7 @@ from app.models.models import (
     FiliereEnum,
     NiveauEnum
 )
-from app.routers.auth import get_current_user
+from app.utils import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
