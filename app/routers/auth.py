@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from app.models.models import Utilisateur, UtilisateurSchema
+from app.models.models import Utilisateur, UtilisateurSchema, UtilisateurRole
 from app.utils import (
     verify_password, 
     get_password_hash, 
@@ -135,13 +135,22 @@ async def login(user_credentials: UserLogin, response: Response):
 @router.get("/me", response_model=UtilisateurSchema)
 async def get_current_user_info(current_user: Utilisateur = Depends(get_current_user)):
     """Get current user information"""
+    # Get user roles
+    user_roles = await UtilisateurRole.filter(utilisateur=current_user, statut="active").all()
+    roles = [role.role for role in user_roles]
+    
     return UtilisateurSchema(
         id=current_user.id,
         nom=current_user.nom,
         prenom=current_user.prenom,
         email=current_user.email,
         score=current_user.score,
-        avatar=current_user.avatar
+        avatar=current_user.avatar,
+        discord=current_user.discord,
+        linkedin=current_user.linkedin,
+        filiere=current_user.filiere,
+        niveau=current_user.niveau,
+        roles=roles
     )
 
 @router.put("/me", response_model=UtilisateurSchema)
