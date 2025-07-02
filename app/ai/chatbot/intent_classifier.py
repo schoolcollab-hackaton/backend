@@ -9,7 +9,7 @@ class IntentClassifier:
         if model_path is None:
             # Try to load from local models directory first
             import os
-            local_model_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'multilingual-chatbot')
+            local_model_path = os.path.join(os.path.dirname(__file__), '..', 'ai_models', 'multilingual-chatbot')
             if os.path.exists(local_model_path):
                 self.model = SentenceTransformer(local_model_path)
             else:

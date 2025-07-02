@@ -15,7 +15,7 @@ class ChatResponse(BaseModel):
     intent: str
     confidence: float
     message: str
-    data: Optional[dict] = None
+    data: Optional[List[dict]] = None
     suggestions: Optional[List[str]] = None
 
 chatbot = FrenchChatbot()
@@ -40,6 +40,7 @@ async def chat_with_bot(chat_message: ChatMessage):
             question=chat_message.message,
             reponse=response["message"]
         )
+        print(f"chat response: {response}")
         
         return ChatResponse(
             intent=response["intent"],

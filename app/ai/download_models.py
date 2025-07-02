@@ -9,7 +9,7 @@ import os
 
 def download_models():
     """Download and cache models locally"""
-    models_dir = os.path.join(os.path.dirname(__file__), 'models')
+    models_dir = os.path.join(os.path.dirname(__file__), 'ai_models')
     os.makedirs(models_dir, exist_ok=True)
     
     print("Downloading sentence transformer model...")
