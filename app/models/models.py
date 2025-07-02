@@ -37,6 +37,7 @@ class Utilisateur(Model):
     avatar = fields.TextField(null=True)
     filiere = fields.CharEnumField(FiliereEnum, null=True)
     niveau = fields.IntEnumField(NiveauEnum, null=True)
+    profile_completed = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
