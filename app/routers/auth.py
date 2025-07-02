@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Response
+from fastapi import APIRouter, HTTPException, status, Depends, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+import logging
 from app.models.models import Utilisateur, UtilisateurSchema, UtilisateurRole
 from app.utils import (
     verify_password,
@@ -9,6 +10,10 @@ from app.utils import (
     create_access_token,
     verify_token,
 )
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
@@ -134,28 +139,72 @@ async def login(user_credentials: UserLogin, response: Response):
 
 
 @router.get("/me", response_model=UtilisateurSchema)
-async def get_current_user_info(current_user: Utilisateur = Depends(get_current_user)):
-    """Get current user information"""
-    # Get user roles
-    user_roles = await UtilisateurRole.filter(utilisateur=current_user, statut="active").all()
-    roles = [role.role for role in user_roles]
-    
-    return UtilisateurSchema(
-        id=current_user.id,
-        nom=current_user.nom,
-        prenom=current_user.prenom,
-        email=current_user.email,
-        score=current_user.score,
-        avatar=current_user.avatar,
-<<<<<<< HEAD
-=======
-        discord=current_user.discord,
-        linkedin=current_user.linkedin,
-        filiere=current_user.filiere,
-        niveau=current_user.niveau,
-        roles=roles
->>>>>>> 2ef4c79804be6dbccec215ffaf9ca04c9a5a96fe
-    )
+async def get_current_user_info(request: Request):
+    """Get current user information from httpOnly cookie"""
+    try:
+        logger.debug("Accessing /auth/me endpoint")
+        logger.debug(f"Request cookies: {request.cookies}")
+
+        cookie_token = request.cookies.get("access_token")
+        if not cookie_token:
+            logger.error("No access_token cookie found")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+            )
+
+        logger.debug("Verifying token")
+        try:
+            user_id = verify_token(cookie_token)
+            logger.debug(f"Token verified, user_id: {user_id}")
+        except Exception as e:
+            logger.error(f"Token verification failed: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token: {str(e)}",
+            )
+
+        logger.debug(f"Fetching user with id: {user_id}")
+        user = await Utilisateur.get_or_none(id=int(user_id))
+        if user is None:
+            logger.error(f"No user found with id: {user_id}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        logger.debug("Fetching user roles")
+        user_roles = await UtilisateurRole.filter(
+            utilisateur=user, statut="active"
+        ).all()
+        roles = [role.role for role in user_roles]
+        logger.debug(f"User roles: {roles}")
+
+        user_schema = UtilisateurSchema(
+            id=user.id,
+            nom=user.nom,
+            prenom=user.prenom,
+            email=user.email,
+            score=user.score,
+            avatar=user.avatar,
+            # discord=user.discord,
+            # linkedin=user.linkedin,
+            profile_completed=user.profile_completed,
+            filiere=user.filiere,
+            niveau=user.niveau,
+            roles=roles,
+        )
+        logger.debug("Successfully retrieved user info")
+        return user_schema
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Unexpected error in /auth/me endpoint")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}",
+        )
 
 
 @router.put("/me", response_model=UtilisateurSchema)
@@ -181,3 +230,15 @@ async def update_current_user(
         score=current_user.score,
         avatar=current_user.avatar,
     )
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    """Logout user by clearing the httpOnly cookie"""
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+    )
+    return {"message": "Successfully logged out"}
