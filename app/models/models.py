@@ -218,7 +218,7 @@ class UtilisateurSchema(BaseModel):
     email: str
     score: int
     avatar: Optional[str] = None
-    filiere: Optional[FiliereEnum] = None
+    filiere: Optional[FiliereEnum] = None   
     niveau: Optional[NiveauEnum] = None
     roles: Optional[List[RoleEnum]] = None
 

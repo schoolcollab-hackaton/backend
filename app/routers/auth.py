@@ -19,7 +19,6 @@ class UserRegister(BaseModel):
     prenom: str
     email: EmailStr
     password: str
-    role: str = "student"  # Default role
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -62,7 +61,6 @@ async def register(user_data: UserRegister):
         prenom=user_data.prenom,
         email=user_data.email,
         password=hashed_password,
-        role=user_data.role,
         score=0
     )
     
@@ -75,7 +73,6 @@ async def register(user_data: UserRegister):
         nom=user.nom,
         prenom=user.prenom,
         email=user.email,
-        role=user.role,
         score=user.score,
         avatar=user.avatar
     )
