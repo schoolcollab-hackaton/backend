@@ -198,6 +198,18 @@ class HistoriqueChatbot(Model):
     class Meta:
         table = "historiqueChatbot"
 
+class Contact(Model):
+    id = fields.IntField(pk=True)
+    nom = fields.CharField(max_length=100)
+    email = fields.CharField(max_length=200)
+    sujet = fields.CharField(max_length=200)
+    message = fields.TextField()
+    dateCreation = fields.DatetimeField(auto_now_add=True)
+    statut = fields.CharField(max_length=50, default='nouveau')  # nouveau, lu, traite
+
+    class Meta:
+        table = "contact"
+
 # Pydantic schemas for API responses
 class UtilisateurSchema(BaseModel):
     id: int
@@ -206,7 +218,7 @@ class UtilisateurSchema(BaseModel):
     email: str
     score: int
     avatar: Optional[str] = None
-    filiere: Optional[FiliereEnum] = None
+    filiere: Optional[FiliereEnum] = None   
     niveau: Optional[NiveauEnum] = None
     roles: Optional[List[RoleEnum]] = None
 
@@ -234,3 +246,21 @@ class MessageSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ContactSchema(BaseModel):
+    id: int
+    nom: str
+    email: str
+    sujet: str
+    message: str
+    dateCreation: datetime
+    statut: str
+
+    class Config:
+        from_attributes = True
+
+class ContactCreateSchema(BaseModel):
+    nom: str
+    email: str
+    sujet: str
+    message: str

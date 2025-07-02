@@ -19,7 +19,6 @@ class UserRegister(BaseModel):
     prenom: str
     email: EmailStr
     password: str
-    role: str = "student"  # Default role
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -62,7 +61,6 @@ async def register(user_data: UserRegister):
         prenom=user_data.prenom,
         email=user_data.email,
         password=hashed_password,
-        role=user_data.role,
         score=0
     )
     
@@ -75,7 +73,6 @@ async def register(user_data: UserRegister):
         nom=user.nom,
         prenom=user.prenom,
         email=user.email,
-        role=user.role,
         score=user.score,
         avatar=user.avatar
     )
@@ -113,7 +110,6 @@ async def login(user_credentials: UserLogin):
         nom=user.nom,
         prenom=user.prenom,
         email=user.email,
-        role=user.role,
         score=user.score,
         avatar=user.avatar
     )
@@ -132,7 +128,6 @@ async def get_current_user_info(current_user: Utilisateur = Depends(get_current_
         nom=current_user.nom,
         prenom=current_user.prenom,
         email=current_user.email,
-        role=current_user.role,
         score=current_user.score,
         avatar=current_user.avatar
     )
@@ -146,7 +141,6 @@ async def update_current_user(
     # Update user fields
     current_user.nom = user_update.nom
     current_user.prenom = user_update.prenom
-    current_user.role = user_update.role
     
     # Update password if provided
     if user_update.password:
@@ -159,7 +153,6 @@ async def update_current_user(
         nom=current_user.nom,
         prenom=current_user.prenom,
         email=current_user.email,
-        role=current_user.role,
         score=current_user.score,
         avatar=current_user.avatar
     )

@@ -1,0 +1,71 @@
+[
+  {
+    "keywords": ["bonjour", "salut", "hello", "coucou"],
+    "response": "Bonjour ! Je suis votre assistant IA collaboratif. Comment puis-je vous aider aujourd’hui ?"
+  },
+  {
+    "keywords": ["au revoir", "bye", "à bientôt", "ciao"],
+    "response": "Au revoir ! N'hésitez pas à revenir si vous avez besoin d’aide."
+  },
+  {
+    "keywords": ["merci", "thanks", "merci beaucoup", "merci bien"],
+    "response": "Avec plaisir ! Je suis là pour vous aider."
+  },
+  {
+    "keywords": ["désolé", "pardon", "excuse-moi", "je m'excuse"],
+    "response": "Aucun souci. Continuons quand vous êtes prêt."
+  },
+  {
+    "keywords": ["aide", "aider", "question", "comment faire", "besoin d’aide"],
+    "response": "Je peux vous aider à publier un message, à trouver un membre ou à comprendre les règles du réseau. Que souhaitez-vous faire ?"
+  },
+  {
+    "keywords": ["publier", "poster", "écrire un message", "nouveau post", "partager"],
+    "response": "Très bien ! Quel est le contenu que vous souhaitez publier ?",
+    "action": { "type": "await_post_content" }
+  },
+  {
+    "keywords": ["je veux dire", "voici mon message", "mon post est", "voici le contenu"],
+    "response": "Vous voulez publier : \"[votre contenu]\". Confirmez-vous ?",
+    "action": { "type": "await_post_confirmation" }
+  },
+  {
+    "keywords": ["oui", "je confirme", "c’est bon", "valide", "confirme"],
+    "response": "Parfait, je publie votre contenu.",
+    "action": { "type": "confirm_post" }
+  },
+  {
+    "keywords": ["non", "annule", "pas maintenant", "stop", "je veux changer"],
+    "response": "D’accord, la publication est annulée. Souhaitez-vous faire autre chose ?"
+  },
+  {
+    "keywords": ["trouver un expert", "chercher un membre", "trouver quelqu’un", "je cherche", "compétence"],
+    "response": "D’accord ! Quelle compétence ou domaine recherchez-vous chez un membre ?",
+    "action": { "type": "await_user_skill" }
+  },
+  {
+    "keywords": ["développement web", "javascript", "python", "data", "marketing", "ui", "ux"],
+    "response": "Je vais chercher les membres correspondant à cette compétence.",
+    "action": { "type": "search_user_by_skill" }
+  },
+  {
+    "keywords": ["règles", "comment fonctionne", "le réseau", "explication", "fonctionnement"],
+    "response": "Ce réseau permet aux utilisateurs de collaborer, poser des questions, publier du contenu et trouver des experts dans différents domaines."
+  },
+  {
+    "keywords": ["qui peut m’aider", "qui est dispo", "qui est en ligne"],
+    "response": "Je peux vous suggérer des membres actifs ou compétents dans un domaine précis. Quel est votre besoin ?"
+  },
+  {
+    "keywords": ["quels sont les membres", "liste des membres", "voir les utilisateurs"],
+    "response": "Voici quelques membres disponibles : Alice, Bob, Carla. Pour des détails, demandez une compétence spécifique."
+  },
+  {
+    "keywords": ["je ne comprends pas", "explique moi", "tu peux répéter"],
+    "response": "Pas de problème. Vous pouvez me demander de publier un contenu, chercher un membre ou poser une question librement."
+  },
+  {
+    "keywords": ["tes fonctions", "que peux-tu faire", "tes capacités", "ce que tu sais faire"],
+    "response": "Je suis un agent IA qui peut modérer les messages, publier pour vous, rechercher des membres compétents et répondre à vos questions."
+  }
+]
