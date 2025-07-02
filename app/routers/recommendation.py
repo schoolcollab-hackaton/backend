@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from app.models.models import (
@@ -8,11 +7,11 @@ from app.models.models import (
     NiveauEnum, 
     RoleEnum
 )
-from app.utils import verify_token
 from app.ai.recommendation_service import RecommendationService
+from app.utils import get_current_user
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
-security = HTTPBearer()
+
 
 # Response models
 class SkillDetail(BaseModel):
@@ -75,17 +74,6 @@ class GroupRecommendation(BaseModel):
     interest: str
     match_score: float
 
-# Authentication dependency
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    user_id = verify_token(token)
-    user = await Utilisateur.get_or_none(id=int(user_id))
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
 
 @router.get("/skill-swap", response_model=List[SkillSwapRecommendation])
 async def get_skill_swap_recommendations(

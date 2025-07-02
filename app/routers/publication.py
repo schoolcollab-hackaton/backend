@@ -6,7 +6,7 @@ from app.models.models import (
     UtilisateurPublication,
     PublicationSchema,
 )
-from app.routers.auth import get_current_user
+from app.utils import get_current_user
 from pydantic import BaseModel
 from datetime import datetime
 

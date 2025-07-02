@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.models import Utilisateur, Groupe, UtilisateurGroupe
 from app.models.models import CentreInteret
-from app.routers.auth import get_current_user
+from app.utils import get_current_user
 from pydantic import BaseModel
 
 class ChangementRole(BaseModel):
