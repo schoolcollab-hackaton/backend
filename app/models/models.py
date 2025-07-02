@@ -35,6 +35,8 @@ class Utilisateur(Model):
     password = fields.TextField()
     score = fields.IntField(default=0)
     avatar = fields.TextField(null=True)
+    discord = fields.CharField(max_length=100, null=True)
+    linkedin = fields.CharField(max_length=200, null=True)
     filiere = fields.CharEnumField(FiliereEnum, null=True)
     niveau = fields.IntEnumField(NiveauEnum, null=True)
     profile_completed = fields.BooleanField(default=False)
@@ -284,6 +286,8 @@ class UtilisateurSchema(BaseModel):
     email: str
     score: int
     avatar: Optional[str] = None
+    discord: Optional[str] = None
+    linkedin: Optional[str] = None
     filiere: Optional[FiliereEnum] = None
     niveau: Optional[NiveauEnum] = None
     profile_completed: bool = False
