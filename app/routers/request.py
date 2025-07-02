@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from typing import List, Optional
-from app.models.models import UtilisateurRequest, Utilisateur, RequestTypeEnum
+from app.models.models import UtilisateurRequest, Utilisateur, RequestTypeEnum, UtilisateurMate
 from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/requests", tags=["requests"])
@@ -93,7 +93,24 @@ async def accept_request(
     request.status = "accepted"
     await request.save()
     
-    return {"message": "Request accepted successfully"}
+    # Add both users as mates to each other
+    try:
+        # Add receiver as mate of sender
+        await UtilisateurMate.get_or_create(
+            utilisateur_id=request.sender_id,
+            mate_id=current_user.id
+        )
+        
+        # Add sender as mate of receiver
+        await UtilisateurMate.get_or_create(
+            utilisateur_id=current_user.id,
+            mate_id=request.sender_id
+        )
+    except Exception as e:
+        # Continue even if mate relationship already exists
+        pass
+    
+    return {"message": "Request accepted successfully and users added as mates"}
 
 @router.put("/{request_id}/reject")
 async def reject_request(

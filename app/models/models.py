@@ -297,6 +297,18 @@ class UtilisateurRequest(Model):
         table = "utilisateurRequest"
 
 
+class UtilisateurMate(Model):
+    id = fields.IntField(pk=True)
+    utilisateur = fields.ForeignKeyField("models.Utilisateur", related_name="user_mates")
+    mate = fields.ForeignKeyField("models.Utilisateur", related_name="mate_of")
+    date_added = fields.DatetimeField(auto_now_add=True)
+    status = fields.CharField(max_length=50, default="active")  # active, blocked
+
+    class Meta:
+        table = "utilisateurMate"
+        unique_together = (("utilisateur", "mate"),)
+
+
 # Pydantic schemas for API responses
 class UtilisateurSchema(BaseModel):
     id: int
