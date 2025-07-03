@@ -677,7 +677,9 @@ from app.models.models import (
     CentreInteret,
     UtilisateurCompetence,
     UtilisateurCentreInteret,
-    UtilisateurRole
+    UtilisateurRole,
+    Groupe,
+    UtilisateurGroupe
 )
 
 # Predefined competences by filiere
@@ -724,6 +726,100 @@ CENTRES_INTERETS = [
 
 # Skill levels
 SKILL_LEVELS = ["Débutant", "Intermédiaire", "Avancé", "Expert"]
+
+# Study Groups data
+GROUPES_ETUDES = [
+    {
+        "nom": "Groupe Python Débutants",
+        "description": "Apprentissage des bases de Python pour débutants. Séances hebdomadaires pour apprendre la syntaxe, les structures de données et les concepts fondamentaux.",
+        "centre_interet": "Développement Web"
+    },
+    {
+        "nom": "Club JavaScript Avancé",
+        "description": "Exploration des concepts avancés de JavaScript : async/await, closures, prototypes, et frameworks modernes comme React et Vue.js.",
+        "centre_interet": "Développement Web"
+    },
+    {
+        "nom": "Data Science Collective",
+        "description": "Groupe d'étude dédié à l'analyse de données, machine learning et visualisation. Projets pratiques avec Python, R et Tableau.",
+        "centre_interet": "Data Science"
+    },
+    {
+        "nom": "Cybersécurité & Ethical Hacking",
+        "description": "Apprentissage des techniques de sécurité informatique, tests de pénétration et protection des systèmes. Environnement de lab sécurisé.",
+        "centre_interet": "Cybersécurité"
+    },
+    {
+        "nom": "Intelligence Artificielle Lab",
+        "description": "Recherche et développement en IA : deep learning, NLP, computer vision. Utilisation de TensorFlow, PyTorch et projets collaboratifs.",
+        "centre_interet": "Intelligence Artificielle"
+    },
+    {
+        "nom": "Développement Mobile React Native",
+        "description": "Création d'applications mobiles cross-platform avec React Native. De l'idée au déploiement sur les stores.",
+        "centre_interet": "Mobile Development"
+    },
+    {
+        "nom": "DevOps & Cloud Computing",
+        "description": "Maîtrise des outils DevOps : Docker, Kubernetes, CI/CD, AWS, Azure. Automatisation et déploiement d'applications.",
+        "centre_interet": "Cloud Computing"
+    },
+    {
+        "nom": "UI/UX Design Workshop",
+        "description": "Atelier de design d'interfaces utilisateur. Figma, Adobe XD, principes de design, recherche utilisateur et prototypage.",
+        "centre_interet": "Design Thinking"
+    },
+    {
+        "nom": "Blockchain Developers",
+        "description": "Développement d'applications décentralisées (DApps), smart contracts avec Solidity, et exploration des cryptomonnaies.",
+        "centre_interet": "Blockchain"
+    },
+    {
+        "nom": "Game Development Unity",
+        "description": "Création de jeux vidéo avec Unity. Programmation C#, game design, physique des jeux et publication sur différentes plateformes.",
+        "centre_interet": "Gaming"
+    },
+    {
+        "nom": "API REST & Microservices",
+        "description": "Architecture et développement d'APIs REST, microservices, gestion des bases de données et optimisation des performances.",
+        "centre_interet": "Cloud Computing"
+    },
+    {
+        "nom": "Machine Learning Pratique",
+        "description": "Application pratique du machine learning : classification, régression, clustering. Projets avec scikit-learn et datasets réels.",
+        "centre_interet": "Intelligence Artificielle"
+    },
+    {
+        "nom": "Entrepreneuriat Tech",
+        "description": "Développement d'idées startup, business plan, pitch, financement. Rencontres avec entrepreneurs et investisseurs.",
+        "centre_interet": "Startup"
+    },
+    {
+        "nom": "Open Source Contributors",
+        "description": "Contribution à des projets open source, Git avancé, collaboration communautaire et développement de portfolio.",
+        "centre_interet": "Open Source"
+    },
+    {
+        "nom": "Fintech Innovation",
+        "description": "Technologies financières : paiements digitaux, trading algorithmique, cryptomonnaies, réglementation fintech.",
+        "centre_interet": "Fintech"
+    },
+    {
+        "nom": "IoT & Arduino Projects",
+        "description": "Projets Internet des Objets avec Arduino, Raspberry Pi, capteurs et communication entre appareils connectés.",
+        "centre_interet": "IoT"
+    },
+    {
+        "nom": "Préparation Certifications",
+        "description": "Préparation collective aux certifications IT : AWS, Azure, Google Cloud, CompTIA, Cisco. Sessions de révision et examens blancs.",
+        "centre_interet": "Cloud Computing"
+    },
+    {
+        "nom": "Agile & Scrum Masters",
+        "description": "Pratique des méthodologies agiles, Scrum, Kanban. Simulations de projets et préparation aux certifications Scrum Master.",
+        "centre_interet": "Agile"
+    }
+]
 
 async def create_or_get_competence(nom: str):
     """Create or get existing competence"""
@@ -848,6 +944,93 @@ async def generate_user_roles(user, niveau):
         except Exception as e:
             print(f"Error creating teacher role for user {user.email}: {e}")
 
+async def create_study_groups():
+    """Create study groups and assign users to them"""
+    print("Creating study groups...")
+    
+    created_groups = []
+    
+    for group_data in GROUPES_ETUDES:
+        try:
+            # Get or create centre d'intérêt for this group
+            centre_interet = await create_or_get_centre_interet(group_data["centre_interet"])
+            
+            # Create the group
+            group = await Groupe.create(
+                nom=group_data["nom"],
+                description=group_data["description"],
+                centreInteret=centre_interet
+            )
+            
+            created_groups.append(group)
+            
+        except Exception as e:
+            print(f"Error creating group {group_data['nom']}: {e}")
+            continue
+    
+    print(f"✅ Created {len(created_groups)} study groups")
+    
+    # Assign users to groups randomly
+    await assign_users_to_groups(created_groups)
+    
+    return created_groups
+
+async def assign_users_to_groups(groups):
+    """Randomly assign users to study groups based on their interests"""
+    print("Assigning users to study groups...")
+    
+    users = await Utilisateur.all()
+    total_assignments = 0
+    
+    for group in groups:
+        try:
+            # Get users with similar interests to this group
+            centre_interet = await group.centreInteret
+            
+            # Find users who have this centre d'intérêt
+            users_with_interest = await UtilisateurCentreInteret.filter(
+                centreInteret=centre_interet
+            ).prefetch_related('utilisateur')
+            
+            interested_users = [uc.utilisateur for uc in users_with_interest]
+            
+            # Also add some random users to diversify the groups
+            other_users = [u for u in users if u not in interested_users]
+            
+            # Select 3-8 users with this interest + 1-3 random users
+            num_interested = min(random.randint(3, 8), len(interested_users))
+            num_random = min(random.randint(1, 3), len(other_users))
+            
+            selected_interested = random.sample(interested_users, num_interested) if interested_users else []
+            selected_random = random.sample(other_users, num_random) if other_users else []
+            
+            group_members = selected_interested + selected_random
+            
+            # Assign users to group
+            for user in group_members:
+                try:
+                    await UtilisateurGroupe.create(
+                        utilisateur=user,
+                        groupe=group
+                    )
+                    total_assignments += 1
+                except Exception as e:
+                    print(f"Error assigning user {user.email} to group {group.nom}: {e}")
+                    
+        except Exception as e:
+            print(f"Error processing group {group.nom}: {e}")
+            continue
+    
+    print(f"✅ Made {total_assignments} user-group assignments")
+    
+    # Print group statistics
+    for group in groups:
+        try:
+            member_count = await UtilisateurGroupe.filter(groupe=group).count()
+            print(f"  📚 {group.nom}: {member_count} membres")
+        except Exception as e:
+            print(f"Error counting members for {group.nom}: {e}")
+
 async def populate_mock_data():
     """Populate database with mock users and their data"""
     try:
@@ -893,6 +1076,9 @@ async def populate_mock_data():
         
         print(f"✅ Successfully created {created_count} users with complete profiles!")
         
+        # Create study groups and assign users
+        await create_study_groups()
+        
     except Exception as e:
         print(f"Error populating mock data: {e}")
 
@@ -910,7 +1096,11 @@ async def clear_user_data():
     await UtilisateurCompetence.all().delete()
     await UtilisateurCentreInteret.all().delete()
     await UtilisateurRole.all().delete()
+    await UtilisateurGroupe.all().delete()
     
-    print("✅ Cleared all user competences, centres d'intérêts, and roles")
+    # Clear groups
+    await Groupe.all().delete()
+    
+    print("✅ Cleared all user competences, centres d'intérêts, roles, and groups")
     
     await Tortoise.close_connections()
