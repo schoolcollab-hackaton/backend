@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from typing import List, Optional
-from app.models.models import UtilisateurRequest, Utilisateur, RequestTypeEnum, UtilisateurMate
+from app.models.models import UtilisateurRequest, Utilisateur, RequestTypeEnum, UtilisateurMate, UtilisateurMentor
 from app.utils import get_current_user
 
 router = APIRouter(prefix="/requests", tags=["requests"])
@@ -93,24 +93,29 @@ async def accept_request(
     request.status = "accepted"
     await request.save()
     
-    # Add both users as mates to each other
+    # Add relationship based on request type
     try:
-        # Add receiver as mate of sender
-        await UtilisateurMate.get_or_create(
-            utilisateur_id=request.sender_id,
-            mate_id=current_user.id
-        )
-        
-        # Add sender as mate of receiver
-        await UtilisateurMate.get_or_create(
-            utilisateur_id=current_user.id,
-            mate_id=request.sender_id
-        )
+        if request.type == RequestTypeEnum.SKILL_SWAP:
+            # Add both users as mates to each other
+            await UtilisateurMate.get_or_create(
+                utilisateur_id=request.sender_id,
+                mate_id=current_user.id
+            )
+            await UtilisateurMate.get_or_create(
+                utilisateur_id=current_user.id,
+                mate_id=request.sender_id
+            )
+        elif request.type == RequestTypeEnum.MENTORING:
+            # Add sender as mentee of receiver (receiver becomes mentor)
+            await UtilisateurMentor.get_or_create(
+                utilisateur_id=request.sender_id,
+                mentor_id=current_user.id
+            )
     except Exception as e:
-        # Continue even if mate relationship already exists
+        # Continue even if relationship already exists
         pass
     
-    return {"message": "Request accepted successfully and users added as mates"}
+    return {"message": "Request accepted successfully and relationship created"}
 
 @router.put("/{request_id}/reject")
 async def reject_request(

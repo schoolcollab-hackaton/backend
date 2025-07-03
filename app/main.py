@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
 from app.utils import get_allowed_origins
 from app.models.models import *
-from app.routers import auth, contact, groupe, publication, dashboard, profile, demande_soutien, recommendation, request
+from app.routers import auth, contact, groupe, publication, dashboard, profile, demande_soutien, recommendation, request, mentor
 from app.ai.chatbot.router import router as chatbot_router
 
 from data.mock import (
@@ -62,6 +62,7 @@ app.include_router(publication.router)
 app.include_router(demande_soutien.router)
 app.include_router(recommendation.router)
 app.include_router(request.router)
+app.include_router(mentor.router)
 
 @app.on_event("startup")
 async def startup_event():
