@@ -61,7 +61,7 @@ async def register(user_data: UserRegister):
     )
 
     # Create access token
-    access_token = create_access_token(data={"sub": str(user.id)})
+    access_token = create_access_token(user.id)
 
     # Convert to schema
     user_schema = UtilisateurSchema(
