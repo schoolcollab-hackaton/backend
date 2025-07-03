@@ -309,6 +309,18 @@ class UtilisateurMate(Model):
         unique_together = (("utilisateur", "mate"),)
 
 
+class UtilisateurMentor(Model):
+    id = fields.IntField(pk=True)
+    utilisateur = fields.ForeignKeyField("models.Utilisateur", related_name="user_mentors")
+    mentor = fields.ForeignKeyField("models.Utilisateur", related_name="mentor_of")
+    date_added = fields.DatetimeField(auto_now_add=True)
+    status = fields.CharField(max_length=50, default="active")  # active, blocked
+
+    class Meta:
+        table = "utilisateurMentor"
+        unique_together = (("utilisateur", "mentor"),)
+
+
 # Pydantic schemas for API responses
 class UtilisateurSchema(BaseModel):
     id: int
