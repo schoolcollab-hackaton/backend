@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 from .chatbot import FrenchChatbot
 from app.models.models import HistoriqueChatbot, Utilisateur
 import json
@@ -15,7 +15,7 @@ class ChatResponse(BaseModel):
     intent: str
     confidence: float
     message: str
-    data: Optional[List[dict]] = None
+    data: Optional[Union[dict, List[dict]]] = None
     suggestions: Optional[List[str]] = None
 
 chatbot = FrenchChatbot()
@@ -40,13 +40,15 @@ async def chat_with_bot(chat_message: ChatMessage):
             question=chat_message.message,
             reponse=response["message"]
         )
-        print(f"chat response: {response}")
+        # Ensure data is properly formatted
+        data = response.get("data")
+        print(f"Data received: {data}")
         
         return ChatResponse(
             intent=response["intent"],
             confidence=response["confidence"],
             message=response["message"],
-            data=response["data"],
+            data=data,
             suggestions=suggestions
         )
         
@@ -69,7 +71,7 @@ async def get_chat_history(user_id: int, limit: int = 10):
                 "id": h.id,
                 "question": h.question,
                 "reponse": h.reponse,
-                "date": h.dateInteraction
+                "date": h.dateInteraction.isoformat()
             }
             for h in history
         ]
@@ -130,6 +132,15 @@ async def get_available_intents():
                     "Je veux devenir parrain",
                     "Comment être mentor?",
                     "Je peux aider comme parrain"
+                ]
+            },
+            "find_skill_swap": {
+                "description": "Chercher des partenaires d'échange de compétences",
+                "examples": [
+                    "Je cherche un échange de compétences",
+                    "Skill swap",
+                    "Je veux échanger mes compétences",
+                    "Partenaires d'apprentissage"
                 ]
             }
         }

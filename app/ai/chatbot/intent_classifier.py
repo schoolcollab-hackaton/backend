@@ -57,6 +57,20 @@ class IntentClassifier:
                 "Devenir parrain",
                 "Offrir mon aide comme mentor",
                 "Je veux mentorer"
+            ],
+            "find_skill_swap": [
+                "Je cherche un échange de compétences",
+                "Trouver des partenaires skill swap",
+                "Je veux échanger mes compétences",
+                "Chercher quelqu'un pour échanger des skills",
+                "Skill swap",
+                "Échange de compétences",
+                "Je peux enseigner et apprendre",
+                "Partenaires d'apprentissage",
+                "Échanger mes connaissances",
+                "Qui peut m'aider en échange de mes compétences?",
+                "Troc de compétences",
+                "Apprentissage mutuel"
             ]
         }
         
