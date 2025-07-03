@@ -150,3 +150,49 @@ async def mes_groupes(current_user: Utilisateur = Depends(get_current_user)):
         }
         for lien in liens
     ]
+
+@router.get("/all")
+async def get_all_groups():
+    """Get all groups with their members"""
+    try:
+        # Get all groups with their centre d'intérêt
+        groups = await Groupe.all().prefetch_related("centreInteret")
+        
+        result = []
+        for group in groups:
+            # Get all members for this group
+            members_links = await UtilisateurGroupe.filter(
+                groupe=group,
+                statut="actif"
+            ).prefetch_related("utilisateur")
+            
+            # Format members data
+            members = [
+                {
+                    "id": link.utilisateur.id,
+                    "nom": link.utilisateur.nom,
+                    "prenom": link.utilisateur.prenom,
+                    "email": link.utilisateur.email,
+                    "filiere": link.utilisateur.filiere.value if link.utilisateur.filiere else None,
+                    "niveau": link.utilisateur.niveau.value if link.utilisateur.niveau else None,
+                    "avatar": link.utilisateur.avatar
+                }
+                for link in members_links
+            ]
+            
+            # Format group data
+            group_data = {
+                "id": group.id,
+                "nom": group.nom,
+                "description": group.description,
+                "centre_interet": group.centreInteret.titre if group.centreInteret else None,
+                "membres": members,
+                "nombre_membres": len(members)
+            }
+            
+            result.append(group_data)
+        
+        return result
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des groupes: {str(e)}")
