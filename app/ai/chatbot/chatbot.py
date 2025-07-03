@@ -30,6 +30,11 @@ class FrenchChatbot:
                 "error": "Je n'ai pas pu envoyer votre demande de parrainage.",
                 "missing_parrain": "Pouvez-vous me dire quel parrain vous intéresse ?"
             },
+            "find_skill_swap": {
+                "success": "Voici des partenaires d'échange de compétences recommandés pour vous :",
+                "no_results": "Je n'ai trouvé aucun partenaire d'échange de compétences pour le moment.",
+                "error": "Je n'ai pas pu trouver de partenaires d'échange de compétences."
+            },
             "unknown": "Je ne comprends pas votre demande. Pouvez-vous reformuler ?"
         }
     
@@ -80,6 +85,8 @@ class FrenchChatbot:
                 response = await self._handle_search_parrain(message, user_id, response)
             elif intent == "ask_for_parrain":
                 response = await self._handle_ask_for_parrain(message, user_id, response)
+            elif intent == "find_skill_swap":
+                response = await self._handle_find_skill_swap(message, user_id, response)
             else:
                 response["message"] = self.responses["unknown"]
             
@@ -184,13 +191,33 @@ class FrenchChatbot:
             
         return response
     
+    async def _handle_find_skill_swap(self, message: str, user_id: int, response: Dict) -> Dict:
+        try:
+            # Find skill swap partners using the recommendation service
+            partners = await self.db_queries.find_skill_swap_partners(user_id, limit=5)
+            
+            if partners:
+                response["message"] = self.responses["find_skill_swap"]["success"]
+                response["data"] = partners
+            else:
+                response["message"] = self.responses["find_skill_swap"]["no_results"]
+                response["data"] = []
+                
+        except Exception as e:
+            response["message"] = self.responses["find_skill_swap"]["error"]
+            response["data"] = []
+            print(f"Error in _handle_find_skill_swap: {e}")
+            
+        return response
+    
     async def get_suggestions(self, user_id: int) -> List[str]:
         try:
             user_info = await self.db_queries.get_user_info(user_id)
             suggestions = [
                 "Montrez-moi les groupes disponibles",
                 "J'ai besoin d'aide en programmation",
-                "Je cherche un parrain"
+                "Je cherche un parrain",
+                "Je veux échanger mes compétences"
             ]
             
             if user_info and "mentor" in user_info.get("roles", []):
@@ -202,5 +229,6 @@ class FrenchChatbot:
             return [
                 "Montrez-moi les groupes disponibles",
                 "J'ai besoin d'aide",
-                "Je cherche un parrain"
+                "Je cherche un parrain",
+                "Je veux échanger mes compétences"
             ]

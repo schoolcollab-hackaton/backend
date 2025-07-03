@@ -51,7 +51,7 @@ class DatabaseQueries:
                 "id": demande.id,
                 "competence": competence.nom,
                 "statut": demande.statut,
-                "date_demande": demande.dateDemande
+                "date_demande": demande.dateDemande.isoformat()
             }
         except Exception as e:
             return {"error": str(e)}
@@ -115,7 +115,7 @@ class DatabaseQueries:
             return {
                 "id": parrainage.id,
                 "statut": parrainage.statut,
-                "date_demande": parrainage.dateDemande
+                "date_demande": parrainage.dateDemande.isoformat()
             }
         except Exception as e:
             return {"error": str(e)}
@@ -148,3 +148,35 @@ class DatabaseQueries:
     async def get_centres_interet() -> List[Dict]:
         centres = await CentreInteret.all()
         return [{"id": c.id, "titre": c.titre} for c in centres]
+    
+    @staticmethod
+    async def find_skill_swap_partners(user_id: int, limit: int = 5) -> List[Dict]:
+        """Find skill swap partners using the recommendation service"""
+        try:
+            # Import here to avoid circular imports
+            from app.ai.recommendation_service import RecommendationService
+            
+            recommendation_service = RecommendationService()
+            recommendations = await recommendation_service.skill_swap(user_id, limit)
+            
+            # Format the recommendations for chatbot response
+            partners = []
+            for rec in recommendations:
+                partner = {
+                    "id": rec.get("id"),
+                    "nom": rec.get("nom"),
+                    "prenom": rec.get("prenom"),
+                    "filiere": rec.get("filiere"),
+                    "niveau": rec.get("niveau"),
+                    "swap_score": round(rec.get("swap_score", 0), 2),
+                    "skills_they_offer": rec.get("swap_details", {}).get("skills_they_offer", []),
+                    "skills_you_offer": rec.get("swap_details", {}).get("skills_you_offer", []),
+                    "mutual_benefits": rec.get("swap_details", {}).get("mutual_benefits", [])
+                }
+                partners.append(partner)
+            
+            return partners
+            
+        except Exception as e:
+            print(f"Error finding skill swap partners: {e}")
+            return []
